@@ -131,13 +131,13 @@ export default function Login() {
               <p className="font-medium">Demo Credentials:</p>
               <div className="grid grid-cols-1 gap-2 text-xs">
                 <div>
-                  <span className="font-medium">Admin:</span> admin / password
+                  <span className="font-medium">Admin:</span> superadmin / password
                 </div>
                 <div>
-                  <span className="font-medium">Teacher:</span> teacher1 / password
+                  <span className="font-medium">Teacher:</span> teacher99 / password
                 </div>
                 <div>
-                  <span className="font-medium">Student:</span> student1 / password
+                  <span className="font-medium">Student:</span> student / password
                 </div>
               </div>
             </div>

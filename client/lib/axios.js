@@ -24,9 +24,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Prevent infinite redirect if already on login page
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        // Use dynamic import to avoid circular dependency
+        import('@/store/authStore').then(({ default: useAuthStore }) => {
+          useAuthStore.getState().logout();
+        });
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

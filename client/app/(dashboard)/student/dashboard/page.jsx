@@ -55,9 +55,7 @@ export default function StudentDashboard() {
     );
   }
 
-  const totalSubjects = Object.keys(attendanceSummary || {}).length;
-  const overallAttendance = Object.values(attendanceSummary || {}).reduce((sum, subject) => 
-    sum + parseFloat(subject.percentage || 0), 0) / (totalSubjects || 1);
+  const overallAttendance = attendanceSummary?.percentage ?? 0;
 
   return (
     <div className="space-y-6">
@@ -116,7 +114,7 @@ export default function StudentDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSubjects}</div>
+            <div className="text-2xl font-bold">N/A</div>
           </CardContent>
         </Card>
 
@@ -191,28 +189,36 @@ export default function StudentDashboard() {
           <CardHeader>
             <CardTitle>Attendance Overview</CardTitle>
             <CardDescription>
-              Your attendance summary by subject
+              Your overall attendance summary
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {attendanceSummary && Object.keys(attendanceSummary).length > 0 ? (
+            {attendanceSummary && attendanceSummary.total > 0 ? (
               <div className="space-y-4">
-                {Object.entries(attendanceSummary).map(([subject, data]) => (
-                  <div key={subject} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{subject}</span>
-                      <span className="text-gray-600">{data.percentage}%</span>
-                    </div>
-                    <Progress 
-                      value={parseFloat(data.percentage)} 
-                      className="h-2"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Present: {data.present}</span>
-                      <span>Total: {data.total}</span>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">Overall Attendance</span>
+                    <span className="text-gray-600">{attendanceSummary.percentage}%</span>
                   </div>
-                ))}
+                  <Progress 
+                    value={attendanceSummary.percentage} 
+                    className="h-2"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">{attendanceSummary.present}</p>
+                    <p className="text-xs text-gray-500">Present</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-red-600">{attendanceSummary.absent}</p>
+                    <p className="text-xs text-gray-500">Absent</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">{attendanceSummary.total}</p>
+                    <p className="text-xs text-gray-500">Total</p>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">

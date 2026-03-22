@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import StatsCards from '@/components/admin/StatsCards';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 import api from '@/lib/axios';
 
 export default function AdminDashboard() {
@@ -71,18 +72,18 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="grid gap-2">
-              <div className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+              <Link href="/admin/students" className="p-3 border rounded-lg hover:bg-gray-50 transition-colors block">
                 <h4 className="font-medium">Register New Student</h4>
                 <p className="text-sm text-gray-600">Add a new student to the system</p>
-              </div>
-              <div className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+              </Link>
+              <Link href="/admin/classes" className="p-3 border rounded-lg hover:bg-gray-50 transition-colors block">
                 <h4 className="font-medium">Create New Class</h4>
                 <p className="text-sm text-gray-600">Set up a new class for the academic year</p>
-              </div>
-              <div className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+              </Link>
+              <Link href="/admin/classes" className="p-3 border rounded-lg hover:bg-gray-50 transition-colors block">
                 <h4 className="font-medium">Assign Teachers</h4>
                 <p className="text-sm text-gray-600">Assign teachers to classes and subjects</p>
-              </div>
+              </Link>
             </div>
           </CardContent>
         </Card>

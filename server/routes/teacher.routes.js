@@ -135,6 +135,10 @@ router.put('/marks', async (req, res) => {
   try {
     const { studentId, subjectId, examType, score, totalMarks = 100 } = req.body;
 
+    if (score > totalMarks) {
+      return res.status(400).json({ message: `Score (${score}) cannot exceed total marks (${totalMarks})` });
+    }
+
     const student = await Student.findById(studentId);
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });

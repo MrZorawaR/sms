@@ -495,6 +495,14 @@ const assignSubjectToClass = async (req, res) => {
       $addToSet: { classes: classId },
     });
 
+    // Sync: if the subject has a teacher, add this subject to that teacher's subjects array
+    const subject = await Subject.findById(subjectId);
+    if (subject && subject.teacher) {
+      await Teacher.findByIdAndUpdate(subject.teacher, {
+        $addToSet: { subjects: subjectId },
+      });
+    }
+
     res.json({ message: "Subject assigned to class successfully" });
   } catch (error) {
     console.error("Assign subject to class error:", error);

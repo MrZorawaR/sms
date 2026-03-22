@@ -6,18 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, Edit, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, MoreHorizontal, Edit, Users, UserPlus, BookPlus } from 'lucide-react';
 import useClassStore from '@/store/classStore';
+import useTeacherStore from '@/store/teacherStore';
+import useSubjectStore from '@/store/subjectStore';
 import ClassForm from '@/components/admin/ClassForm';
 
 export default function ClassesPage() {
-  const { classes, loading, error, fetchClasses, addClass, updateClass } = useClassStore();
+  const { classes, loading, error, fetchClasses, addClass, updateClass, assignTeacher, assignSubject } = useClassStore();
+  const { teachers, fetchTeachers } = useTeacherStore();
+  const { subjects, fetchSubjects } = useSubjectStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
 
+  const [assignTeacherOpen, setAssignTeacherOpen] = useState(false);
+  const [assignSubjectOpen, setAssignSubjectOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+
   useEffect(() => {
     fetchClasses();
-  }, [fetchClasses]);
+    fetchTeachers();
+    fetchSubjects();
+  }, [fetchClasses, fetchTeachers, fetchSubjects]);
 
   const handleAdd = () => {
     setSelectedClass(null);
@@ -108,6 +121,14 @@ export default function ClassesPage() {
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Edit</span>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setSelectedClass(classItem); setAssignTeacherOpen(true); }}>
+                              <UserPlus className="mr-2 h-4 w-4" />
+                              <span>Assign Teacher</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setSelectedClass(classItem); setAssignSubjectOpen(true); }}>
+                              <BookPlus className="mr-2 h-4 w-4" />
+                              <span>Assign Subject</span>
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -126,6 +147,52 @@ export default function ClassesPage() {
         classData={selectedClass}
         onSave={handleSave}
       />
+
+      <Dialog open={assignTeacherOpen} onOpenChange={setAssignTeacherOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Assign Teacher to Class</DialogTitle></DialogHeader>
+          <div className="py-4">
+            <Select onValueChange={setSelectedTeacher} value={selectedTeacher}>
+              <SelectTrigger><SelectValue placeholder="Select Teacher" /></SelectTrigger>
+              <SelectContent>
+                {teachers.map(t => <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button onClick={async () => {
+              if (selectedTeacher && selectedClass) {
+                await assignTeacher(selectedClass._id, selectedTeacher);
+                setAssignTeacherOpen(false);
+                setSelectedTeacher('');
+              }
+            }}>Assign</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={assignSubjectOpen} onOpenChange={setAssignSubjectOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Assign Subject to Class</DialogTitle></DialogHeader>
+          <div className="py-4">
+            <Select onValueChange={setSelectedSubject} value={selectedSubject}>
+              <SelectTrigger><SelectValue placeholder="Select Subject" /></SelectTrigger>
+              <SelectContent>
+                {subjects.map(s => <SelectItem key={s._id} value={s._id}>{s.name} ({s.code})</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button onClick={async () => {
+              if (selectedSubject && selectedClass) {
+                await assignSubject(selectedClass._id, selectedSubject);
+                setAssignSubjectOpen(false);
+                setSelectedSubject('');
+              }
+            }}>Assign</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

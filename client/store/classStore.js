@@ -50,6 +50,32 @@ const useClassStore = create((set, get) => ({
       return { success: false, error: errorMessage };
     }
   },
+
+  assignTeacher: async (classId, teacherId) => {
+    set({ loading: true, error: null });
+    try {
+      await api.put(`/admin/assign-teacher-to-class`, { classId, teacherId });
+      await get().fetchClasses();
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to assign teacher';
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  assignSubject: async (classId, subjectId) => {
+    set({ loading: true, error: null });
+    try {
+      await api.put(`/admin/assign-subject-to-class`, { classId, subjectId });
+      await get().fetchClasses();
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to assign subject';
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
+    }
+  },
 }));
 
 export default useClassStore;

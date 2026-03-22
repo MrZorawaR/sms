@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Users, BookOpen, ClipboardList, Calendar } from 'lucide-react';
+import Link from 'next/link';
 import api from '@/lib/axios';
 
 export default function TeacherDashboard() {
@@ -176,7 +177,7 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="grid gap-2">
-              <div className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+              <Link href="/teacher/attendance" className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer block">
                 <div className="flex items-center space-x-3">
                   <div className="rounded-lg bg-blue-50 p-2">
                     <ClipboardList className="h-4 w-4 text-blue-600" />
@@ -186,8 +187,8 @@ export default function TeacherDashboard() {
                     <p className="text-sm text-gray-600">Mark student attendance for today</p>
                   </div>
                 </div>
-              </div>
-              <div className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+              </Link>
+              <Link href="/teacher/marks" className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer block">
                 <div className="flex items-center space-x-3">
                   <div className="rounded-lg bg-green-50 p-2">
                     <BookOpen className="h-4 w-4 text-green-600" />
@@ -197,7 +198,7 @@ export default function TeacherDashboard() {
                     <p className="text-sm text-gray-600">Record student marks and grades</p>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           </CardContent>
         </Card>

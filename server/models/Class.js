@@ -4,7 +4,6 @@ const classSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique: true,
     trim: true
   },
   section: {
@@ -31,5 +30,8 @@ const classSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Compound unique index: same name+section+year cannot exist twice
+classSchema.index({ name: 1, section: 1, academicYear: 1 }, { unique: true });
 
 module.exports = mongoose.model('Class', classSchema);
