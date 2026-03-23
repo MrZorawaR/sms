@@ -3,15 +3,24 @@ import api from '@/lib/axios';
 
 const useClassStore = create((set, get) => ({
   classes: [],
+  currentPage: 1,
+  totalPages: 1,
+  totalRecords: 0,
   loading: false,
   error: null,
 
   // Fetch all classes
-  fetchClasses: async () => {
+  fetchClasses: async (page = 1, limit = 10) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.get('/admin/classes');
-      set({ classes: response.data, loading: false });
+      const response = await api.get(`/admin/classes?page=${page}&limit=${limit}`);
+      set({ 
+        classes: response.data.data,
+        currentPage: response.data.page,
+        totalPages: response.data.totalPages,
+        totalRecords: response.data.total,
+        loading: false 
+      });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to fetch classes';
       set({ error: errorMessage, loading: false });

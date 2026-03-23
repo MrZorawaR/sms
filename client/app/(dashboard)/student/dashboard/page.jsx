@@ -5,12 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { User, Calendar, BookOpen, TrendingUp } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '@/lib/axios';
 
 export default function StudentDashboard() {
   const [profile, setProfile] = useState(null);
   const [attendanceSummary, setAttendanceSummary] = useState(null);
+  const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,13 +24,15 @@ export default function StudentDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [profileRes, attendanceRes] = await Promise.all([
+      const [profileRes, attendanceRes, calendarRes] = await Promise.all([
         api.get('/student/profile'),
-        api.get('/student/attendance/summary')
+        api.get('/student/attendance/summary'),
+        api.get('/student/attendance/calendar')
       ]);
       
       setProfile(profileRes.data);
       setAttendanceSummary(attendanceRes.data);
+      setCalendarData(calendarRes.data);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to fetch dashboard data');
       console.error('Fetch dashboard data error:', error);
@@ -43,19 +48,28 @@ export default function StudentDashboard() {
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="flex flex-col space-y-3">
+                  <Skeleton className="h-4 w-[150px]" />
+                  <Skeleton className="h-10 w-[80px]" />
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
         </div>
       </div>
     );
   }
 
   const overallAttendance = attendanceSummary?.percentage ?? 0;
+  const pieData = [
+    { name: 'Present', value: overallAttendance },
+    { name: 'Absent', value: 100 - overallAttendance },
+  ];
+  const COLORS = ['#22c55e', '#ef4444'];
 
   return (
     <div className="space-y-6">
@@ -219,6 +233,27 @@ export default function StudentDashboard() {
                     <p className="text-xs text-gray-500">Total</p>
                   </div>
                 </div>
+                
+                <div className="h-[200px] w-full mt-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: '8px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -228,6 +263,29 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Attendance Heatmap */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Attendance Heatmap (Last 30 Days)</CardTitle>
+          <CardDescription>Hover over a tile to see the date and status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {calendarData && calendarData.length > 0 ? (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {calendarData.slice(-30).map((record, i) => (
+                <div
+                  key={i}
+                  className={`w-8 h-8 rounded-md cursor-pointer transition-transform hover:scale-110 shadow-sm ${record.status === 'Present' ? 'bg-green-500 hover:bg-green-400' : 'bg-red-500 hover:bg-red-400'}`}
+                  title={`${record.date}: ${record.status}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">No recent attendance records</div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

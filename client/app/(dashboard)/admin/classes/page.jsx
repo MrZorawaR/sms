@@ -15,7 +15,7 @@ import useSubjectStore from '@/store/subjectStore';
 import ClassForm from '@/components/admin/ClassForm';
 
 export default function ClassesPage() {
-  const { classes, loading, error, fetchClasses, addClass, updateClass, assignTeacher, assignSubject } = useClassStore();
+  const { classes, currentPage, totalPages, totalRecords, loading, error, fetchClasses, addClass, updateClass, assignTeacher, assignSubject } = useClassStore();
   const { teachers, fetchTeachers } = useTeacherStore();
   const { subjects, fetchSubjects } = useSubjectStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -27,10 +27,18 @@ export default function ClassesPage() {
   const [selectedSubject, setSelectedSubject] = useState('');
 
   useEffect(() => {
-    fetchClasses();
+    fetchClasses(1, 10);
     fetchTeachers();
     fetchSubjects();
   }, [fetchClasses, fetchTeachers, fetchSubjects]);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) fetchClasses(currentPage + 1, 10);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) fetchClasses(currentPage - 1, 10);
+  };
 
   const handleAdd = () => {
     setSelectedClass(null);
@@ -137,6 +145,20 @@ export default function ClassesPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="flex items-center justify-between px-2 py-4 border-t mt-4">
+            <div className="text-sm text-gray-500">
+              Showing page {currentPage} of {totalPages} ({totalRecords} total records)
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1 || loading}>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage >= totalPages || loading}>
+                Next
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

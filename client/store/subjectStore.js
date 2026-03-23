@@ -3,14 +3,23 @@ import api from '@/lib/axios';
 
 const useSubjectStore = create((set, get) => ({
   subjects: [],
+  currentPage: 1,
+  totalPages: 1,
+  totalRecords: 0,
   loading: false,
   error: null,
 
-  fetchSubjects: async () => {
+  fetchSubjects: async (page = 1, limit = 10) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.get('/admin/subjects');
-      set({ subjects: response.data, loading: false });
+      const response = await api.get(`/admin/subjects?page=${page}&limit=${limit}`);
+      set({ 
+        subjects: response.data.data,
+        currentPage: response.data.page,
+        totalPages: response.data.totalPages,
+        totalRecords: response.data.total,
+        loading: false 
+      });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to fetch subjects';
       set({ error: errorMessage, loading: false });

@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import StatsCards from '@/components/admin/StatsCards';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import api from '@/lib/axios';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -36,17 +38,34 @@ export default function AdminDashboard() {
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="flex flex-col space-y-3">
+                  <Skeleton className="h-4 w-[150px]" />
+                  <Skeleton className="h-10 w-[80px]" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+        </div>
       </div>
     );
   }
+
+  const userStats = [
+    { name: 'Students', count: stats?.totalStudents || 0 },
+    { name: 'Teachers', count: stats?.totalTeachers || 0 },
+    { name: 'Classes', count: stats?.totalClasses || 0 },
+  ];
+
+  const parsedAttendance = parseFloat(stats?.attendanceRate || "0");
+  const pieData = [
+    { name: 'Present', value: parsedAttendance },
+    { name: 'Absent', value: 100 - parsedAttendance },
+  ];
+  const COLORS = ['#22c55e', '#ef4444'];
 
   return (
     <div className="space-y-6">
@@ -61,6 +80,54 @@ export default function AdminDashboard() {
       )}
 
       <StatsCards stats={stats} />
+
+      {/* CHARTS SECTION */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Platform Demographics</CardTitle>
+            <CardDescription>Accounts vs Entities</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={userStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Global Attendance Rate</CardTitle>
+            <CardDescription>Platform-wide recorded present vs absent ratios</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[300px] flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: '8px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

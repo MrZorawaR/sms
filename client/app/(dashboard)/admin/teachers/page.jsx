@@ -11,16 +11,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Search, MoreHorizontal, Edit, Trash2, User } from 'lucide-react';
 import useTeacherStore from '@/store/teacherStore';
 import TeacherForm from '@/components/admin/TeacherForm';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function TeachersPage() {
-  const { teachers, loading, error, fetchTeachers, addTeacher, updateTeacher, deleteTeacher } = useTeacherStore();
+  const { teachers, currentPage, totalPages, totalRecords, loading, error, fetchTeachers, addTeacher, updateTeacher, deleteTeacher } = useTeacherStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [teacherToDelete, setTeacherToDelete] = useState(null);
 
   useEffect(() => {
-    fetchTeachers();
+    fetchTeachers(1, 10);
   }, [fetchTeachers]);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) fetchTeachers(currentPage + 1, 10);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) fetchTeachers(currentPage - 1, 10);
+  };
 
   const handleAdd = () => {
     setSelectedTeacher(null);
@@ -32,9 +42,14 @@ export default function TeachersPage() {
     setIsFormOpen(true);
   };
   
-  const handleDelete = async (teacherId) => {
-    if (window.confirm('Are you sure you want to delete this teacher?')) {
-      await deleteTeacher(teacherId);
+  const handleDeleteClick = (teacherId) => {
+    setTeacherToDelete(teacherId);
+  };
+
+  const confirmDelete = async () => {
+    if (teacherToDelete) {
+      await deleteTeacher(teacherToDelete);
+      setTeacherToDelete(null);
     }
   };
   
@@ -129,7 +144,7 @@ export default function TeachersPage() {
                             <DropdownMenuItem onClick={() => handleEdit(teacher)}>
                               <Edit className="mr-2 h-4 w-4" /><span>Edit</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(teacher._id)} className="text-red-600">
+                            <DropdownMenuItem onClick={() => handleDeleteClick(teacher._id)} className="text-red-600">
                                <Trash2 className="mr-2 h-4 w-4" /><span>Delete</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -141,6 +156,20 @@ export default function TeachersPage() {
               </TableBody>
             </Table>
           </div>
+
+          <div className="flex items-center justify-between px-2 py-4 border-t mt-4">
+            <div className="text-sm text-gray-500">
+              Showing page {currentPage} of {totalPages} ({totalRecords} total records)
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1 || loading}>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage >= totalPages || loading}>
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -149,6 +178,14 @@ export default function TeachersPage() {
         onOpenChange={setIsFormOpen}
         teacher={selectedTeacher}
         onSave={handleSave}
+      />
+
+      <ConfirmModal
+        isOpen={!!teacherToDelete}
+        onClose={() => setTeacherToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Teacher"
+        description="Are you sure you want to delete this teacher? This action cannot be undone."
       />
     </div>
   );

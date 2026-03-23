@@ -11,16 +11,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Search, Mail, Phone, GraduationCap, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import useStudentStore from '@/store/studentStore';
 import StudentForm from '@/components/admin/StudentForm';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function StudentsPage() {
-  const { students, loading, error, fetchStudents, addStudent, updateStudent, deleteStudent } = useStudentStore();
+  const { students, currentPage, totalPages, totalRecords, loading, error, fetchStudents, addStudent, updateStudent, deleteStudent } = useStudentStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentToDelete, setStudentToDelete] = useState(null);
 
   useEffect(() => {
-    fetchStudents();
+    fetchStudents(1, 10);
   }, [fetchStudents]);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) fetchStudents(currentPage + 1, 10);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) fetchStudents(currentPage - 1, 10);
+  };
 
   const handleAdd = () => {
     setSelectedStudent(null);
@@ -32,9 +42,14 @@ export default function StudentsPage() {
     setIsFormOpen(true);
   };
   
-  const handleDelete = async (studentId) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
-      await deleteStudent(studentId);
+  const handleDeleteClick = (studentId) => {
+    setStudentToDelete(studentId);
+  };
+
+  const confirmDelete = async () => {
+    if (studentToDelete) {
+      await deleteStudent(studentToDelete);
+      setStudentToDelete(null);
     }
   };
   
@@ -152,7 +167,7 @@ export default function StudentsPage() {
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Edit</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(student._id)} className="text-red-600">
+                            <DropdownMenuItem onClick={() => handleDeleteClick(student._id)} className="text-red-600">
                                <Trash2 className="mr-2 h-4 w-4" />
                                <span>Delete</span>
                             </DropdownMenuItem>
@@ -165,6 +180,20 @@ export default function StudentsPage() {
               </TableBody>
             </Table>
           </div>
+          
+          <div className="flex items-center justify-between px-2 py-4 border-t mt-4">
+            <div className="text-sm text-gray-500">
+              Showing page {currentPage} of {totalPages} ({totalRecords} total records)
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1 || loading}>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage >= totalPages || loading}>
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -173,6 +202,14 @@ export default function StudentsPage() {
         onOpenChange={setIsFormOpen}
         student={selectedStudent}
         onSave={handleSave}
+      />
+
+      <ConfirmModal
+        isOpen={!!studentToDelete}
+        onClose={() => setStudentToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Student"
+        description="Are you sure you want to delete this student? This action cannot be undone."
       />
     </div>
   );

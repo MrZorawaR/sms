@@ -1,42 +1,27 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const authService = require("../services/auth.service");
 
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    const { user, accessToken, refreshToken } = await authService.login(username, password);
 
-    // Check if user exists
-    const user = await User.findOne({ username }).populate("profile");
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    // Set cookies
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(400).json({ message: "Account is deactivated" });
-    }
-
-    // Create JWT payload
-    const payload = {
-      id: user._id,
-      username: user.username,
-      role: user.role,
-    };
-
-    // Sign token
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "24h",
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.json({
       success: true,
-      token,
       user: {
         id: user._id,
         username: user.username,
@@ -46,8 +31,54 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    if (error.message.includes("Invalid credentials") || error.message.includes("deactivated")) {
+        return res.status(401).json({ message: error.message });
+    }
     res.status(500).json({ message: "Server error" });
   }
+};
+
+const refresh = async (req, res) => {
+  try {
+    const tokens = await authService.refresh(req.cookies.refreshToken);
+
+    // Set new cookies
+    res.cookie("accessToken", tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.json({ success: true, message: "Tokens refreshed" });
+  } catch (error) {
+    console.error("Refresh error:", error);
+    if (error.message.includes("refresh token") || error.message.includes("user")) {
+        return res.status(401).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const logout = async (req, res) => {
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.json({ success: true, message: "Logged out successfully" });
 };
 
 const getCurrentUser = async (req, res) => {
@@ -68,5 +99,7 @@ const getCurrentUser = async (req, res) => {
 
 module.exports = {
   login,
+  refresh,
+  logout,
   getCurrentUser,
 };

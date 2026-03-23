@@ -11,16 +11,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Search, MoreHorizontal, Edit, Trash2, BookOpen } from 'lucide-react';
 import useSubjectStore from '@/store/subjectStore';
 import SubjectForm from '@/components/admin/SubjectForm';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function SubjectsPage() {
-  const { subjects, loading, error, fetchSubjects, addSubject, updateSubject, deleteSubject } = useSubjectStore();
+  const { subjects, currentPage, totalPages, totalRecords, loading, error, fetchSubjects, addSubject, updateSubject, deleteSubject } = useSubjectStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [subjectToDelete, setSubjectToDelete] = useState(null);
 
   useEffect(() => {
-    fetchSubjects();
+    fetchSubjects(1, 10);
   }, [fetchSubjects]);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) fetchSubjects(currentPage + 1, 10);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) fetchSubjects(currentPage - 1, 10);
+  };
 
   const handleAdd = () => {
     setSelectedSubject(null);
@@ -32,9 +42,14 @@ export default function SubjectsPage() {
     setIsFormOpen(true);
   };
   
-  const handleDelete = async (subjectId) => {
-    if (window.confirm('Are you sure you want to delete this subject?')) {
-      await deleteSubject(subjectId);
+  const handleDeleteClick = (subjectId) => {
+    setSubjectToDelete(subjectId);
+  };
+
+  const confirmDelete = async () => {
+    if (subjectToDelete) {
+      await deleteSubject(subjectToDelete);
+      setSubjectToDelete(null);
     }
   };
   
@@ -122,7 +137,7 @@ export default function SubjectsPage() {
                             <DropdownMenuItem onClick={() => handleEdit(subject)}>
                               <Edit className="mr-2 h-4 w-4" /><span>Edit</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(subject._id)} className="text-red-600">
+                            <DropdownMenuItem onClick={() => handleDeleteClick(subject._id)} className="text-red-600">
                                <Trash2 className="mr-2 h-4 w-4" /><span>Delete</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -134,6 +149,20 @@ export default function SubjectsPage() {
               </TableBody>
             </Table>
           </div>
+
+          <div className="flex items-center justify-between px-2 py-4 border-t mt-4">
+            <div className="text-sm text-gray-500">
+              Showing page {currentPage} of {totalPages} ({totalRecords} total records)
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1 || loading}>
+                Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage >= totalPages || loading}>
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -142,6 +171,14 @@ export default function SubjectsPage() {
         onOpenChange={setIsFormOpen}
         subject={selectedSubject}
         onSave={handleSave}
+      />
+
+      <ConfirmModal
+        isOpen={!!subjectToDelete}
+        onClose={() => setSubjectToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Subject"
+        description="Are you sure you want to delete this subject? This action cannot be undone."
       />
     </div>
   );

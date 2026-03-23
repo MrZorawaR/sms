@@ -1,46 +1,5 @@
 const mongoose = require('mongoose');
 
-const attendanceSchema = new mongoose.Schema({
-  date: {
-    type: Date,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['Present', 'Absent'],
-    required: true
-  }
-  // The 'subject' field has been removed from here.
-});
-
-const marksSchema = new mongoose.Schema({
-  subject: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: true
-  },
-  examType: {
-    type: String,
-    required: true,
-    enum: ['Mid-Term', 'Finals', 'Quiz', 'Assignment']
-  },
-  score: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  totalMarks: {
-    type: Number,
-    required: true,
-    default: 100,
-    min: 1
-  },
-  date: {
-    type: Date,
-    default: Date.now
-  }
-});
-
 const studentSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -70,8 +29,6 @@ const studentSchema = new mongoose.Schema({
     ref: 'Class',
     required: true
   },
-  attendance: [attendanceSchema],
-  marks: [marksSchema],
   dateOfBirth: {
     type: Date
   },
@@ -82,5 +39,8 @@ const studentSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+studentSchema.index({ class: 1 });
+studentSchema.index({ rollNumber: 1 }); // unique true already adds an index, but explicit declaration helps
 
 module.exports = mongoose.model('Student', studentSchema);

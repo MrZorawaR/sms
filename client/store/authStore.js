@@ -1,66 +1,56 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
-const useAuthStore = create(
-  persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
+const useAuthStore = create((set, get) => ({
+  user: null,
+  isAuthenticated: false,
+  isLoading: false,
 
-      login: (userData, token) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+  login: (userData) => {
+    set({
+      user: userData,
+      isAuthenticated: true,
+    });
+  },
+
+  logout: async () => {
+    try {
+      const { default: api } = await import('@/lib/axios');
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout API execution error:', error);
+    } finally {
+      set({
+        user: null,
+        isAuthenticated: false,
+      });
+    }
+  },
+
+  setLoading: (loading) => {
+    set({ isLoading: loading });
+  },
+
+  initializeAuth: async () => {
+    // Dynamic import to avoid circular dependency
+    const { default: api } = await import('@/lib/axios');
+    set({ isLoading: true });
+    try {
+      const response = await api.get('/auth/me');
+      if (response.data && response.data.user) {
         set({
-          user: userData,
-          token: token,
+          user: response.data.user,
           isAuthenticated: true,
         });
-      },
-
-      logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-        });
-      },
-
-      setLoading: (loading) => {
-        set({ isLoading: loading });
-      },
-
-      initializeAuth: () => {
-        const token = localStorage.getItem('token');
-        const userStr = localStorage.getItem('user');
-        
-        if (token && userStr) {
-          try {
-            const user = JSON.parse(userStr);
-            set({
-              user: user,
-              token: token,
-              isAuthenticated: true,
-            });
-          } catch (error) {
-            console.error('Error parsing user data:', error);
-            get().logout();
-          }
-        }
-      },
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-        isAuthenticated: state.isAuthenticated,
-      }),
+      } else {
+        get().logout();
+      }
+    } catch (error) {
+      console.error('Error fetching user on init:', error);
+      get().logout();
+    } finally {
+      set({ isLoading: false });
     }
-  )
-);
+  },
+}));
 
 export default useAuthStore;

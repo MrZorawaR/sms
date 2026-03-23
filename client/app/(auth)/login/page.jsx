@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, GraduationCap } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import api from '@/lib/axios';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -39,6 +40,7 @@ export default function Login() {
       const { user, token } = response.data;
 
       login(user, token);
+      toast.success('Successfully logged in!');
 
       // Redirect based on role
       switch (user.role) {
@@ -55,7 +57,9 @@ export default function Login() {
           router.push('/');
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
+      const errorMsg = error.response?.data?.message || 'Login failed';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Users, BookOpen, ClipboardList, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/axios';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function TeacherDashboard() {
   const [classes, setClasses] = useState([]);
@@ -33,17 +35,21 @@ export default function TeacherDashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="flex flex-col space-y-3">
+                  <Skeleton className="h-4 w-[150px]" />
+                  <Skeleton className="h-10 w-[80px]" />
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+          <Skeleton className="h-[300px] w-full rounded-xl" />
         </div>
       </div>
     );
@@ -51,6 +57,11 @@ export default function TeacherDashboard() {
 
   const totalStudents = classes.reduce((sum, cls) => sum + (cls.students?.length || 0), 0);
   const totalSubjects = classes.reduce((sum, cls) => sum + (cls.subjects?.length || 0), 0);
+
+  const barData = classes.map(cls => ({
+    name: `${cls.name} ${cls.section || 'A'}`,
+    students: cls.students?.length || 0
+  }));
 
   return (
     <div className="space-y-6">
@@ -201,6 +212,28 @@ export default function TeacherDashboard() {
               </Link>
             </div>
           </CardContent>
+        </Card>
+
+        {/* Bar Chart representing Students Per Class */}
+        <Card className="md:col-span-2">
+           <CardHeader>
+             <CardTitle>Class Attendance Heat & Demographics</CardTitle>
+             <CardDescription>Visualizing student density across assigned sections</CardDescription>
+           </CardHeader>
+           <CardContent className="h-[300px]">
+             {classes.length === 0 ? (
+               <div className="flex items-center justify-center h-full text-gray-500">No classes mapped</div>
+             ) : (
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                   <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                   <YAxis fontSize={12} tickLine={false} axisLine={false} />
+                   <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
+                   <Bar dataKey="students" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                 </BarChart>
+               </ResponsiveContainer>
+             )}
+           </CardContent>
         </Card>
       </div>
     </div>

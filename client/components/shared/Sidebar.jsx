@@ -9,7 +9,7 @@ export default function Sidebar({ navigation }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
+    <div className="hidden md:flex h-full w-64 flex-col bg-white border-r border-gray-200">
       <nav className="flex-1 space-y-1 p-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');

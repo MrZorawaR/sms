@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, ClipboardList, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, ClipboardList, BookOpen, Calendar } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import Header from '@/components/shared/Header';
 import Sidebar from '@/components/shared/Sidebar';
@@ -12,6 +12,7 @@ const navigation = [
   { name: 'My Classes', href: '/teacher/classes', icon: Users },
   { name: 'Attendance', href: '/teacher/attendance', icon: ClipboardList },
   { name: 'Marks', href: '/teacher/marks', icon: BookOpen },
+  { name: 'Timetable', href: '/teacher/timetable', icon: Calendar },
 ];
 
 export default function TeacherLayout({ children }) {
@@ -30,7 +31,7 @@ export default function TeacherLayout({ children }) {
 
   return (
     <div className="h-screen flex flex-col">
-      <Header title="Teacher Dashboard" />
+      <Header title="Teacher Dashboard" navigation={navigation} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar navigation={navigation} />
         <main className="flex-1 overflow-auto bg-gray-50 p-6">

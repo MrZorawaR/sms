@@ -20,6 +20,7 @@ const {
   updateTeacher,
   deleteTeacher,
 } = require("../controllers/admin.controller");
+const timetableController = require("../controllers/timetable.controller");
 
 const router = express.Router();
 
@@ -79,5 +80,9 @@ router.put("/assign-teacher-to-class", assignTeacherToClass);
 
 // Assign subject to class
 router.put("/assign-subject-to-class", assignSubjectToClass);
+
+// Timetable routines
+router.post("/timetable", timetableController.upsertDayTimetable);
+router.get("/timetable/:classId", timetableController.getClassTimetable);
 
 module.exports = router;

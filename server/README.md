@@ -1,5 +1,7 @@
 # API Documentation
 
+This API operates using `HttpOnly` cookies. Secure tokens (`accessToken` and `refreshToken`) are attached automatically to Set-Cookie headers on login. You do not need to manually manage `Authorization: Bearer` headers in your HTTP client. Make sure to use `withCredentials: true` in your requests.
+
 ## Authentication
 
 ### Endpoint
@@ -8,7 +10,7 @@
 
 ### Description
 
-Authenticates a user and returns a JWT token and user details.
+Authenticates a user, storing short-lived Access Tokens and 7-day Refresh Tokens as HttpOnly browser cookies.
 
 ### Request Body
 
@@ -29,11 +31,11 @@ Authenticates a user and returns a JWT token and user details.
 #### Success
 
   - **Status Code:** `200 OK`
+  - **Headers:** `Set-Cookie: accessToken=...; HttpOnly`, `Set-Cookie: refreshToken=...; HttpOnly`
   - **Body:**
     ```json
     {
       "success": true,
-      "token": "<jwt_token>",
       "user": {
         "id": "<user_id>",
         "username": "johndoe",
@@ -45,18 +47,10 @@ Authenticates a user and returns a JWT token and user details.
 
 #### Invalid Credentials
 
-  - **Status Code:** `400 Bad Request`
+  - **Status Code:** `401 Unauthorized`
   - **Body:**
     ```json
     { "message": "Invalid credentials" }
-    ```
-
-#### Account Deactivated
-
-  - **Status Code:** `400 Bad Request`
-  - **Body:**
-    ```json
-    { "message": "Account is deactivated" }
     ```
 
 #### Server Error
@@ -71,15 +65,60 @@ Authenticates a user and returns a JWT token and user details.
 
 ### Endpoint
 
+`POST /api/auth/refresh`
+
+### Description
+
+Validates the `refreshToken` HttpOnly cookie and securely issues a fresh `accessToken`.
+
+### Responses
+
+#### Success
+
+  - **Status Code:** `200 OK`
+  - **Headers:** `Set-Cookie: accessToken=...; HttpOnly`, `Set-Cookie: refreshToken=...; HttpOnly`
+  - **Body:**
+    ```json
+    { "success": true, "message": "Tokens refreshed" }
+    ```
+
+#### Unauthorized
+
+  - **Status Code:** `401 Unauthorized`
+  - **Body:**
+    ```json
+    { "message": "Invalid refresh token" }
+    ```
+
+-----
+
+### Endpoint
+
+`POST /api/auth/logout`
+
+### Description
+
+Clears both the `accessToken` and `refreshToken` HttpOnly cookies terminating the session.
+
+### Responses
+
+#### Success
+
+  - **Status Code:** `200 OK`
+  - **Body:**
+    ```json
+    { "success": true, "message": "Logged out successfully" }
+    ```
+
+-----
+
+### Endpoint
+
 `GET /api/auth/me`
 
 ### Description
 
-Returns the currently authenticated user's details.
-
-### Headers
-
-  - `Authorization: Bearer <jwt_token>`
+Returns the currently authenticated user's details utilizing validated edge-cookies.
 
 ### Responses
 
@@ -110,7 +149,7 @@ Returns the currently authenticated user's details.
 
 ## Admin
 
-All admin endpoints require an admin user's JWT token in the `Authorization: Bearer <token>` header.
+All admin endpoints require an active `accessToken` HttpOnly cookie assigned to an Admin role.
 
 -----
 
@@ -178,12 +217,25 @@ Registers a new user (student or teacher).
 
 ### Description
 
-Returns a list of all students.
+Returns a paginated list of all students.
+
+### Query Parameters
+
+  - `page` (integer, optional, default: 1): The page chunk to retrieve.
+  - `limit` (integer, optional, default: 10): Items per page.
 
 ### Responses
 
   - **Status Code:** `200 OK`
-  - **Body:** Array of student objects.
+  - **Body:**
+    ```json
+    {
+      "data": [ /* array of student objects */ ],
+      "total": 100,
+      "page": 1,
+      "totalPages": 10
+    }
+    ```
 
 -----
 
@@ -245,12 +297,25 @@ Deletes a student and their associated login account.
 
 ### Description
 
-Returns a list of all teachers.
+Returns a paginated list of all teachers.
+
+### Query Parameters
+
+  - `page` (integer, optional, default: 1): The page chunk to retrieve.
+  - `limit` (integer, optional, default: 10): Items per page.
 
 ### Responses
 
   - **Status Code:** `200 OK`
-  - **Body:** Array of teacher objects.
+  - **Body:**
+    ```json
+    {
+      "data": [ /* array of teacher objects */ ],
+      "total": 50,
+      "page": 1,
+      "totalPages": 5
+    }
+    ```
 
 -----
 
@@ -311,12 +376,25 @@ Deletes a teacher and their associated login account.
 
 ### Description
 
-Returns a list of all classes.
+Returns a paginated list of all classes.
+
+### Query Parameters
+
+  - `page` (integer, optional, default: 1): The page chunk to retrieve.
+  - `limit` (integer, optional, default: 10): Items per page.
 
 ### Responses
 
   - **Status Code:** `200 OK`
-  - **Body:** Array of class objects.
+  - **Body:**
+    ```json
+    {
+      "data": [ /* array of class objects */ ],
+      "total": 30,
+      "page": 1,
+      "totalPages": 3
+    }
+    ```
 
 -----
 
@@ -403,12 +481,25 @@ Deletes a class.
 
 ### Description
 
-Returns a list of all subjects.
+Returns a paginated list of all subjects.
+
+### Query Parameters
+
+  - `page` (integer, optional, default: 1): The page chunk to retrieve.
+  - `limit` (integer, optional, default: 10): Items per page.
 
 ### Responses
 
   - **Status Code:** `200 OK`
-  - **Body:** Array of subject objects.
+  - **Body:**
+    ```json
+    {
+      "data": [ /* array of subject objects */ ],
+      "total": 20,
+      "page": 1,
+      "totalPages": 2
+    }
+    ```
 
 -----
 
@@ -536,8 +627,60 @@ Assigns a subject to a class.
 
 -----
 
+### Endpoint
+
+`POST /api/admin/timetable`
+
+### Description
+
+Upserts a specific daily timetable mapping for a given class.
+
+### Request Body
+
+```json
+{
+  "classId": "<class_id>",
+  "dayOfWeek": "Monday",
+  "periods": [
+    {
+      "subjectId": "<subject_id>",
+      "teacherId": "<teacher_id>",
+      "startTime": "08:00 AM",
+      "endTime": "09:00 AM"
+    }
+  ]
+}
+```
+
+### Responses
+
+  - **Status Code:** `200 OK`
+  - **Body:** `{ "message": "Timetable saved successfully", "timetable": { ...timetableObject } }`
+
+-----
+
+### Endpoint
+
+`GET /api/admin/timetable/:classId`
+
+### Description
+
+Fetches the complete weekly timetable specifically bounded by the queried class ID.
+
+### Path Parameters
+
+  - `classId` (string, required): The ID of the queried class.
+
+### Responses
+
+  - **Status Code:** `200 OK`
+  - **Body:** Array of daily configuration objects nested with periods.
+
+-----
 
 ## Student
+
+All student endpoints require an active `accessToken` HttpOnly cookie assigned to the Student role. They naturally restrict outputs implicitly bounding data tightly to the token's identity.
 
 ### Endpoint
 
@@ -545,7 +688,7 @@ Assigns a subject to a class.
 
 ### Description
 
-Returns the authenticated student's profile.
+Returns the authenticated student's profile natively validating the Edge JWT.
 
 ---
 
@@ -555,7 +698,7 @@ Returns the authenticated student's profile.
 
 ### Description
 
-Returns the authenticated student's attendance records.
+Returns the authenticated student's chronological arrays of isolated attendance metrics.
 
 ---
 
@@ -565,7 +708,7 @@ Returns the authenticated student's attendance records.
 
 ### Description
 
-Returns the authenticated student's marks, grouped by subject.
+Fetches the student's un-aggregated layout simply delivering test results bound linearly.
 
 ---
 
@@ -575,7 +718,54 @@ Returns the authenticated student's marks, grouped by subject.
 
 ### Description
 
-Returns a summary of the authenticated student's attendance by subject.
+Delivers generalized summation tracking of absences bounds (e.g. Total Present, Total Absent).
+
+---
+
+### Endpoint
+
+`GET /api/student/attendance/calendar`
+
+### Description
+
+**(NEW)** Re-maps database arrays distinctly isolating into formatted outputs parsing cleanly into D3 / React Calendar Layout widgets.
+
+### Responses
+
+  - **Status Code:** `200 OK`
+  - **Body:** Array of structures formatting `{ "date": "2025-09-12", "status": "Present" }`.
+
+---
+
+### Endpoint
+
+`GET /api/student/report`
+
+### Description
+
+**(NEW)** Executes extensive aggregation arrays mapping Subject data with relational `Marks`. Integrates algorithms converting raw arrays automatically into string grades (`A+`...`F`) bridging standard overall statistics.
+
+### Responses
+
+  - **Status Code:** `200 OK`
+  - **Body:**
+    ```json
+    {
+      "studentDetails": { ... },
+      "subjects": [ { "subject": "Math", "totalMax": 100, "totalObtained": 95, "percentage": "95.00", "grade": "A+" } ],
+      "summary": { "totalScore": 95, "totalMaxMarks": 100, "percentage": "95.00", "grade": "A+" }
+    }
+    ```
+
+---
+
+### Endpoint
+
+`GET /api/student/timetable`
+
+### Description
+
+**(NEW)** Implicitly deduces bounds through identifying profile tokens finding the weekly Class period configuration array completely removing user-input dependencies entirely.
 
 ---
 
@@ -587,7 +777,7 @@ Returns a summary of the authenticated student's attendance by subject.
 
 ### Description
 
-Returns the classes assigned to the authenticated teacher.
+Returns the classes assigned specifically to the authenticated teacher.
 
 ---
 
@@ -597,7 +787,7 @@ Returns the classes assigned to the authenticated teacher.
 
 ### Description
 
-Returns the students in a specific class.
+Delivers the distinct enrolled cluster spanning the parsed `classId`.
 
 ---
 
@@ -607,7 +797,7 @@ Returns the students in a specific class.
 
 ### Description
 
-Submits attendance for a class and subject.
+Submits standard presence bounds into the primary schema structures.
 
 ### Request Body
 
@@ -630,7 +820,7 @@ Submits attendance for a class and subject.
 
 ### Description
 
-Returns attendance for a class on a specific date.
+Retrieves explicitly inputted chronological records bounding matching inputs arrays previously inserted.
 
 ---
 
@@ -640,7 +830,7 @@ Returns attendance for a class on a specific date.
 
 ### Description
 
-Enters or updates marks for a student in a subject and exam type.
+Enters or updates quantitative scores inside isolated relational document schemas matching specific students.
 
 ### Request Body
 
@@ -662,13 +852,22 @@ Enters or updates marks for a student in a subject and exam type.
 
 ### Description
 
-Returns marks for all students in a class for a specific subject.
+Extracts gradebooks configured across defined matrix hierarchies scaling effectively.
 
 ---
 
-For all endpoints, authentication is required via the `Authorization: Bearer <token>` header unless otherwise specified. Error responses generally follow the format:
+### Endpoint
+
+`GET /api/teacher/timetable`
+
+### Description
+
+**(NEW)** Filters full timetable domains universally scanning arrays finding matches assigning periods mapped dynamically to specific teacher IDs cleanly.
+
+---
+
+For all endpoints, error responses consistently follow the uniform format:
 
 ```json
-{ "message": "Error message" }
+{ "message": "Error message explanation" }
 ```
-

@@ -3,16 +3,20 @@
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LogOut, User, GraduationCap } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
+import { LogOut, User, GraduationCap, Menu } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-export default function Header({ title }) {
+export default function Header({ title, navigation = [] }) {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
 
@@ -33,10 +37,52 @@ export default function Header({ title }) {
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="rounded-lg bg-blue-600 p-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[240px] sm:w-[300px] p-0">
+              <SheetHeader className="p-6 border-b">
+                <SheetTitle className="flex items-center space-x-2">
+                  <div className="rounded-lg bg-blue-600 p-2">
+                    <GraduationCap className="h-5 w-5 text-white" />
+                  </div>
+                  <span>{title}</span>
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col space-y-1 p-4">
+                {navigation && navigation.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                  return (
+                    <SheetClose asChild key={item.name}>
+                      <Link href={item.href}>
+                        <Button
+                          variant={isActive ? 'default' : 'ghost'}
+                          className={cn(
+                            'w-full justify-start',
+                            isActive
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          )}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </Button>
+                      </Link>
+                    </SheetClose>
+                  );
+                })}
+              </nav>
+            </SheetContent>
+          </Sheet>
+
+          <div className="hidden md:flex rounded-lg bg-blue-600 p-2">
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
-          <div>
+          <div className="hidden md:block">
             <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
             <p className="text-sm text-gray-500">Student Management System</p>
           </div>
